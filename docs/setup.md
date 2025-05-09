@@ -10,7 +10,11 @@ Or using [pipx](https://pypa.github.io/pipx/):
 ```bash
 pipx install llm
 ```
-Or using [Homebrew](https://brew.sh/):
+Or using [uv](https://docs.astral.sh/uv/guides/tools/) ({ref}`more tips below <setup-uvx>`):
+```bash
+uv tool install llm
+```
+Or using [Homebrew](https://brew.sh/) (see {ref}`warning note <homebrew-warning>`):
 ```bash
 brew install llm
 ```
@@ -25,10 +29,58 @@ For `pipx`:
 ```bash
 pipx upgrade llm
 ```
+For `uv`:
+```bash
+uv tool upgrade llm
+```
 For Homebrew:
 ```bash
 brew upgrade llm
 ```
+If the latest version is not yet available on Homebrew you can upgrade like this instead:
+```bash
+llm install -U llm
+```
+
+(setup-uvx)=
+## Using uvx
+
+If you have [uv](https://docs.astral.sh/uv/) installed you can also use the `uvx` command to try LLM without first installing it like this:
+
+```bash
+export OPENAI_API_KEY='sx-...'
+uvx llm 'fun facts about skunks'
+```
+This will install and run LLM using a temporary virtual environment.
+
+You can use the `--with` option to add extra plugins. To use Anthropic's models, for example:
+```bash
+export ANTHROPIC_API_KEY='...'
+uvx --with llm-anthropic llm -m claude-3.5-haiku 'fun facts about skunks'
+```
+All of the usual LLM commands will work with `uvx llm`. Here's how to set your OpenAI key without needing an environment variable for example:
+```bash
+uvx llm keys set openai
+# Paste key here
+```
+
+(homebrew-warning)=
+## A note about Homebrew and PyTorch
+
+The version of LLM packaged for Homebrew currently uses Python 3.12. The PyTorch project do not yet have a stable release of PyTorch for that version of Python.
+
+This means that LLM plugins that depend on PyTorch such as [llm-sentence-transformers](https://github.com/simonw/llm-sentence-transformers) may not install cleanly with the Homebrew version of LLM.
+
+You can workaround this by manually installing PyTorch before installing `llm-sentence-transformers`:
+
+```bash
+llm install llm-python
+llm python -m pip install \
+  --pre torch torchvision \
+  --index-url https://download.pytorch.org/whl/nightly/cpu
+llm install llm-sentence-transformers
+```
+This should produce a working installation of that plugin.
 
 ## Installing plugins
 
@@ -44,7 +96,7 @@ llm install llm-gpt4all
 
 Many LLM models require an API key. These API keys can be provided to this tool using several different mechanisms.
 
-You can obtain an API key for OpenAI's language models from [the API keys page](https://platform.openai.com/account/api-keys) on their site.
+You can obtain an API key for OpenAI's language models from [the API keys page](https://platform.openai.com/api-keys) on their site.
 
 ### Saving and using stored keys
 
@@ -63,11 +115,19 @@ Once stored, this key will be automatically used for subsequent calls to the API
 ```bash
 llm "Five ludicrous names for a pet lobster"
 ```
+
+You can list the names of keys that have been set using this command:
+
+```bash
+llm keys
+```
+
 Keys that are stored in this way live in a file called `keys.json`. This file is located at the path shown when you run the following command:
 
 ```bash
 llm keys path
 ```
+
 On macOS this will be `~/Library/Application Support/io.datasette.llm/keys.json`. On Linux it may be something like `~/.config/io.datasette.llm/keys.json`.
 
 ### Passing keys using the --key option
@@ -93,24 +153,26 @@ Keys can also be set using an environment variable. These are different for diff
 
 For OpenAI models the key will be read from the `OPENAI_API_KEY` environment variable.
 
-The environment variable will be used only if no `--key` option is passed to the command.
+The environment variable will be used if no `--key` option is passed to the command and there is not a key configured in `keys.json`
 
-If no environment variable is found, the tool will fall back to checking `keys.json`.
-
-You can force the tool to use the key from `keys.json` even if an environment variable has also been set using `llm "prompt" --key openai`.
+To use an environment variable in place of the `keys.json` key run the prompt like this:
+```bash
+llm 'my prompt' --key $OPENAI_API_KEY
+```
 
 ## Configuration
 
 You can configure LLM in a number of different ways.
 
+(setup-default-model)=
 ### Setting a custom default model
 
-The model used when calling `llm` without the `-m/--model` option defaults to `gpt-3.5-turbo` - the fastest and least expensive OpenAI model, and the same model family that powers ChatGPT.
+The model used when calling `llm` without the `-m/--model` option defaults to `gpt-4o-mini` - the fastest and least expensive OpenAI model.
 
-You can use the `llm models default` command to set a different default model. For GPT-4 (slower and more expensive, but more capable) run this:
+You can use the `llm models default` command to set a different default model. For GPT-4o (slower and more expensive, but more capable) run this:
 
 ```bash
-llm models default gpt-4
+llm models default gpt-4o
 ```
 You can view the current model by running this:
 ```

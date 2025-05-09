@@ -1,5 +1,6 @@
 (tutorial-model-plugin)=
-# Writing a plugin to support a new model
+
+# Developing a model plugin
 
 This tutorial will walk you through developing a new plugin for LLM that adds support for a new Large Language Model.
 
@@ -30,7 +31,7 @@ class Markov(llm.Model):
 
 The `def register_models()` function here is called by the plugin system (thanks to the `@hookimpl` decorator). It uses the `register()` function passed to it to register an instance of the new model.
 
-The `Markov` class implements the model. It sets a `model_id` - an identifier that can be passed to `ll -m` in order to identify the model to be executed.
+The `Markov` class implements the model. It sets a `model_id` - an identifier that can be passed to `llm -m` in order to identify the model to be executed.
 
 The logic for executing the model goes in the `execute()` method. We'll extend this to do something more useful in a later step.
 
@@ -135,9 +136,9 @@ We can try that out by pasting it into the interactive Python interpreter and ru
 
 To execute the model, we start with a word. We look at the options for words that might come next and pick one of those at random. Then we repeat that process until we have produced the desired number of output words.
 
-Some words might not have any following words from our training sentence. For our implementation we wil fall back on picking a random word from our collection.
+Some words might not have any following words from our training sentence. For our implementation we will fall back on picking a random word from our collection.
 
-We will implement this as a [Python generator], using the yield keyword to produce each token:
+We will implement this as a [Python generator](https://realpython.com/introduction-to-python-generators/), using the yield keyword to produce each token:
 ```python
 def generate(transitions, length, start_word=None):
     all_words = list(transitions.keys())
@@ -344,9 +345,9 @@ class Markov(Model):
 ```
 Let's add extra validation rules to our options. Length must be at least 2. Duration must be between 0 and 10.
 
-The `Options` class uses [Pydantic 2](https://pydantic.org/), which can support all sorts of advanced validation rules.
+The `Options` class uses [Pydantic 2](https://pydantic.dev/), which can support all sorts of advanced validation rules.
 
-We can also add inline documentation, which can then be displayed by the `llm models list --options` command.
+We can also add inline documentation, which can then be displayed by the `llm models --options` command.
 
 Add these imports to the top of `llm_markov.py`:
 ```python
@@ -559,3 +560,23 @@ It adds `llm` as a dependency, ensuring it will be installed if someone tries to
 It adds some links to useful pages (you can drop the `project.urls` section if those links are not useful for your project).
 
 You should drop a `LICENSE` file into the GitHub repository for your package as well. I like to use the Apache 2 license [like this](https://github.com/simonw/llm/blob/main/LICENSE).
+
+## What to do if it breaks
+
+Sometimes you may make a change to your plugin that causes it to break, preventing `llm` from starting. For example you may see an error like this one:
+
+```
+$ llm 'hi'
+Traceback (most recent call last):
+  ...
+  File llm-markov/llm_markov.py", line 10
+    register(Markov()):
+                      ^
+SyntaxError: invalid syntax
+```
+You may find that you are unable to uninstall the plugin using `llm uninstall llm-markov` because the command itself fails with the same error.
+
+Should this happen, you can uninstall the plugin after first disabling it using the {ref}`LLM_LOAD_PLUGINS <llm-load-plugins>` environment variable like this:
+```bash
+LLM_LOAD_PLUGINS='' llm uninstall llm-markov
+```

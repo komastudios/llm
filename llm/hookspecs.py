@@ -12,4 +12,19 @@ def register_commands(cli):
 
 @hookspec
 def register_models(register):
-    "Return a list of model instances representing LLM models that can be called"
+    "Register additional model instances representing LLM models that can be called"
+
+
+@hookspec
+def register_embedding_models(register):
+    "Register additional model instances that can be used for embedding"
+
+
+@hookspec
+def register_template_loaders(register):
+    "Register additional template loaders with prefixes"
+
+
+@hookspec
+def register_fragment_loaders(register):
+    "Register additional fragment loaders with prefixes"
