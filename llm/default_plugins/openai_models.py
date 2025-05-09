@@ -18,7 +18,6 @@ from pydantic import field_validator, Field
 from typing import AsyncGenerator, List, Iterable, Iterator, Optional, Union
 import json
 import yaml
-import litellm
 
 
 @hookimpl
@@ -256,8 +255,9 @@ def register_commands(cli):
         from llm import get_key
 
         api_key = get_key(key, "openai", "OPENAI_API_KEY")
+        api_base = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")
         response = httpx.get(
-            "https://api.openai.com/v1/models",
+            f"{api_base}/models",
             headers={"Authorization": f"Bearer {api_key}"},
         )
         if response.status_code != 200:
@@ -536,7 +536,7 @@ class _Shared:
     def get_client(self, key, *, async_=False):
         kwargs = {}
         if self.api_base:
-            kwargs["base_url"] = self.api_base
+            kwargs["base_url"] = self.api_base or os.environ.get("OPENAI_BASE_URL")
         if self.api_type:
             kwargs["api_type"] = self.api_type
         if self.api_version:
@@ -594,7 +594,7 @@ class Chat(_Shared, KeyModel):
         client = self.get_client(key)
         usage = None
         if stream:
-            completion = litellm.completion(
+            completion = client.chat.completions.create(
                 model=self.model_name or self.model_id,
                 messages=messages,
                 stream=True,
@@ -666,7 +666,7 @@ class AsyncChat(_Shared, AsyncKeyModel):
                     yield content
             response.response_json = remove_dict_none_values(combine_chunks(chunks))
         else:
-            completion = litellm.completion(
+            completion = await client.chat.completions.create(
                 model=self.model_name or self.model_id,
                 messages=messages,
                 stream=False,

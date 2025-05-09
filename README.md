@@ -26,6 +26,26 @@ Background on this project:
 - [Structured data extraction from unstructured content using LLM schemas](https://simonwillison.net/2025/Feb/28/llm-schemas/)
 - [Long context support in LLM 0.24 using fragments and template plugins](https://simonwillison.net/2025/Apr/7/long-context-llm/)
 
+## Build from source
+
+To build, run:
+
+```bash
+    python -m build
+```
+
+To install, run:
+
+```bash
+# with pipx
+pipx install ./dist/llm-x.yz.tar.gz
+```
+
+To overwrite default API endpoint, set:
+```bash
+export OPENAI_BASE_URL="https://<custom-endpoint-url>/v1"
+```bash
+
 ## Installation
 
 Install this tool using `pip`:
